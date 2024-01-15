@@ -41,17 +41,25 @@ export async function fetchPeople(type, fetch_all) {
   return { people, total: data.total }
 }
 
+String.prototype.fuzzy = function (s) {
+  var hay = this.toLowerCase(), i = 0, n = -1, l;
+  s = s.toLowerCase();
+  for (; l = s[i++];) if (!~(n = hay.indexOf(l, n + 1))) return false;
+  return true;
+};
 
 export async function getPeople(opts) {
   const { start=0, limit=30, sort='created', search } = opts || {}
   let { people, total } = await fetchPeople(opts.type, Object.keys(opts)[0])
 
-  sortBy(sort, people)
+  sortBy(sort, people);
 
   if (search) {
-    const hasMatch = (a, b) => a?.toLowerCase().includes(b?.toLowerCase())
-    people = people.filter(el => hasMatch(el.name, search) || hasMatch(el.email, search))
-    total = people.length
+    const hasMatch = (a, b) => a?.toLowerCase().fuzzy(b?.toLowerCase());
+    people = people.filter((el) =>
+      hasMatch(el.name, search) || hasMatch(el.email, search)
+    );
+    total = people.length;
   }
 
   return { total, people: people.slice(start, start + limit) }
